@@ -5,8 +5,8 @@ def resize_image(img, scale):
     # Eski boyutları al
     height, width = img.shape[:2]
     # Yeni boyutu al
-    new_width=width*scale
-    new_height=height*scale
+    new_width = int(width * scale)
+    new_height = int(height * scale)
     # Yeni boş bir görüntü oluştur
     resized_img = np.zeros((new_height, new_width, 3), dtype=np.uint8)
     
@@ -21,4 +21,4 @@ def resize_image(img, scale):
             resized_y = int(y * height_ratio)
             resized_img[y, x] = img[resized_y, resized_x]
     
-    return resized_img 
+    return resized_img
