@@ -22,3 +22,4 @@ def resize_image(img, scale):
             resized_img[y, x] = img[resized_y, resized_x]
     
     return resized_img
+
