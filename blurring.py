@@ -27,3 +27,17 @@ def create_kernel(size):
     kernel_value = 1 / (size * size)
     kernel = np.full((size, size), kernel_value)
     return kernel
+
+
+
+img=cv2.imread("peppers.jpeg")
+blur=box_blurring(img)
+
+
+cv2.imshow("blur",blur)
+
+
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+
