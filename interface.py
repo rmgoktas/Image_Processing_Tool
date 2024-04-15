@@ -1,54 +1,70 @@
-import tkinter as tk
-from tkinter import filedialog
-from PIL import Image, ImageTk
-from binary_image import binaryimage
-from gray_scale import bgr_to_gray
+from curses import window
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout, QFileDialog,QListWidget,QComboBox
+from PyQt5.QtGui import QPixmap
+file_path=None
+def main():
+    # Uygulama objesini oluştur
+    app = QApplication(sys.argv)
+    
+    # Ana pencereyi oluştur
+    window = QWidget()
+    window.setWindowTitle('PyQt5 Pencere Örneği')
+    window.setGeometry(150, 150, 1200, 800)  # (x, y, width, height)
+    
+    # Resim etiketi
+    image_label = QLabel(window)
+    image_label.setGeometry(50, 80, 300, 300)
+    
+    # Resim seçme butonu
+    open_image_button = QPushButton("Resim Seç", window)
+    open_image_button.setGeometry(50, 50, 100, 30)
+    open_image_button.clicked.connect(lambda: select_image(image_label))
+    
+    # Resim seçme butonu
+    startbutton = QPushButton("start", window)
+    startbutton.setGeometry(80, 400, 100, 30)
 
-image=None
+    # Seçenekler listesi
+    options_list = ["Binary Dönüşüm", "Zoom", "Topla","Çarp","Adaptif Eşikleme","Blurlama"]
+    combo_box = QComboBox(window)
+    combo_box.setGeometry(50, 400, 200, 30)
+    combo_box.addItems(options_list)
+    # Pencereyi göster
+    window.show()
+    
+    # Uygulamayı çalıştır
+    sys.exit(app.exec_())
+    
+def showimage(img):
+    pixmap = QLabel(window)
+    pixmap.setPixmap(pixmap.scaled(300, 300, aspectRatioMode=True))
+    pixmap.setGeometry(200, 80, 300, 300)
+    pixmap.show()
+        
 
-def exit_gui():
-    root.destroy()
 
-def open_image():
-    global image
-    file_path = filedialog.askopenfilename()  # Kullanıcıya resim dosyasını seçme penceresini gösterir
+def select_image(label):
+    options = QFileDialog.Options()
+    file_path, _ = QFileDialog.getOpenFileName(None, "Resim Seç", "", "Resim Dosyalari (*.png *.jpg *.jpeg *.bmp *.gif)", options=options)
     if file_path:
-        image = Image.open(file_path)  # Resim dosyasını açar
-        photo = ImageTk.PhotoImage(image)  # Tkinter için resmi uygun formata dönüştürür
-        
-        label.config(image=photo)  # Etikete resmi yerleştirir
-        label.image = photo  # Referansı tutar
-        label.config(image=photo)
-        label.image=photo
-        label.place(x=20,y=50)
-        
-root = tk.Tk()
-root.title("İlk GUI")
-root.geometry("1200x600")
+        pixmap = QPixmap(file_path)
+        label.setPixmap(pixmap.scaled(label.size(), aspectRatioMode=True))
 
-
-def binarybutton():
-    global image  # global image değişkenini kullanmak için
-    if image:  # eğer image değişkeni varsa
-        gray = bgr_to_gray(image)
-        binary = binaryimage(gray)
-        binary = ImageTk.PhotoImage(binary)   
+def select_option(combo_box, label):
+    selected_option_text = combo_box.currentText()
+    selected_option_index = combo_box.currentIndex()
+    label.setText(f"Seçilen: {selected_option_text} (Index: {selected_option_index})")
+    
+    if selected_option_index == 1:
+        # 1. seçenek seçildiğinde yapılacak işlemi buraya yazabilirsiniz
+        binaryimage=binaryimage(file_path)
+        pixmap=QPixmap.fromImage(binaryimage)
         
-        label.config(image=binary)  
-        label.image = binary  
+        
         
 
 
 
-
-label = tk.Label(root, text="Merhaba, GUI!")
-label.pack()
-
-
-button1 = tk.Button(root, text="Open İmage", command=open_image)
-button1.place(x=20,y=20)
-
-button2=tk.Button(root,text="Binary İmage",command=binarybutton)
-button2.pack(side=tk.RIGHT)
-root.mainloop()
-
+if __name__ == '__main__':
+    main()

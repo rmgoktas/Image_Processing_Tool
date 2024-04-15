@@ -1,7 +1,9 @@
 from gray_scale import bgr_to_gray
 import numpy as np
+import cv2
 
-def binaryimage(img):
+def binaryimage(filepath):
+    img=cv2.imread(filepath)
     #resmin boyutlarını alıyoruz
     height,width=img.shape[:2]
     # boş resim oluştuıruyoruz
