@@ -21,9 +21,10 @@ def main():
     open_image_button.setGeometry(50, 50, 100, 30)
     open_image_button.clicked.connect(lambda: select_image(image_label))
     
-    # Resim seçme butonu
+    # başlatma butonu
     startbutton = QPushButton("start", window)
-    startbutton.setGeometry(80, 400, 100, 30)
+    startbutton.setGeometry(250, 400, 100, 30)
+    startbutton.clicked.connect(lambda: select_image(image_label))
 
     # Seçenekler listesi
     options_list = ["Binary Dönüşüm", "Zoom", "Topla","Çarp","Adaptif Eşikleme","Blurlama"]
@@ -36,14 +37,6 @@ def main():
     # Uygulamayı çalıştır
     sys.exit(app.exec_())
     
-def showimage(img):
-    pixmap = QLabel(window)
-    pixmap.setPixmap(pixmap.scaled(300, 300, aspectRatioMode=True))
-    pixmap.setGeometry(200, 80, 300, 300)
-    pixmap.show()
-        
-
-
 def select_image(label):
     options = QFileDialog.Options()
     file_path, _ = QFileDialog.getOpenFileName(None, "Resim Seç", "", "Resim Dosyalari (*.png *.jpg *.jpeg *.bmp *.gif)", options=options)
@@ -60,6 +53,10 @@ def select_option(combo_box, label):
         # 1. seçenek seçildiğinde yapılacak işlemi buraya yazabilirsiniz
         binaryimage=binaryimage(file_path)
         pixmap=QPixmap.fromImage(binaryimage)
+        pixmap = QLabel(window)
+        pixmap.setPixmap(pixmap.scaled(300, 300, aspectRatioMode=True))
+        pixmap.setGeometry(200, 80, 300, 300)
+        pixmap.show()
         
         
         
