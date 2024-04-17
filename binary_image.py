@@ -1,8 +1,9 @@
 import sys
 import numpy as np
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFileDialog
-from PyQt5.QtGui import QPixmap, QImage
-from PIL import Image
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFileDialog,QWidget,QSizePolicy,QHBoxLayout,QVBoxLayout
+from PyQt5.QtGui import QPixmap, QImage, QPainter
+from PyQt5.QtCore import Qt, QRectF
+import cv2
 
 def binary_image(img):
     if img is None:
@@ -20,76 +21,163 @@ def binary_image(img):
                     binaryimg[y, x] = 255
         return binaryimg
 
-class ImageProcessor(QMainWindow):
+
+class ImageProcessor(QWidget):
     def __init__(self):
         super().__init__()
+        self.initUI()
 
-        self.setWindowTitle("Resim İşleyici")
-        self.setGeometry(100, 100, 1200, 800)  # Ekran boyutunu artırdık
+    def initUI(self):
+        self.setWindowTitle('Binary Dönüşüm')
+        self.setFixedSize(1280, 720)
 
-        self.label = QLabel(self)
-        self.label.setGeometry(50, 50, 400, 400)  # Etiket boyutunu artırdık
+        # Orijinal resim ve işlenmiş resim değişkenleri
+        self.original_image = np.zeros((500, 500, 3), dtype=np.uint8)
+        self.processed_image = np.zeros((500, 500, 3), dtype=np.uint8)
 
-        self.select_button = QPushButton("Resim Seç", self)
-        self.select_button.setGeometry(50, 50, 150, 30)  # Butonun konumunu değiştirdik
-        self.select_button.clicked.connect(self.select_image)
+        # Orijinal resim ve işlenmiş resim için etiketler oluştur
+        self.label_original = QLabel(self)
+        self.label_original.setText("Orijinal Resim")
+        self.label_original.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.label_processed = QLabel(self)
+        self.label_processed.setText("İşlenmiş Resim")
+        self.label_processed.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        self.process_button = QPushButton("İşle ve Göster", self)
-        self.process_button.setGeometry(50, 500, 150, 30)  # Butonun konumunu değiştirdik
-        self.process_button.clicked.connect(self.process_and_show_image)
+        # Resim yükleme düğmesi oluştur
+        self.button_load = QPushButton('Resim Yükle', self)
+        self.button_load.clicked.connect(self.loadImage)
 
-        self.selected_image_path = None  # Seçilen resmin yolunu tutmak için bir değişken
 
-    def show_image(self):
-        if self.selected_image_path:
-            image = Image.open(self.selected_image_path)
-            image_array = np.array(image)  # PIL Image'ı numpy dizisine dönüştür
-            if image_array is not None:
-                height, width = image_array.shape[:2]
-                q_image = QImage(image_array, width, height, QImage.Format_Grayscale8)  # QImage'e dönüştür
-                
-                # Eğer resim ekrandan büyükse, boyutunu değiştir
-                max_width = 500
-                max_height = 300
-                if width > max_width or height > max_height:
-                    q_image = q_image.scaled(max_width, max_height, aspectRatioMode=True)
-                
-                pixmap = QPixmap.fromImage(q_image)  # QPixmap'a dönüştür
-                self.label.setPixmap(pixmap)  # Etikete resmi yerleştir
-    
-    
-    def select_image(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Resim Seç", "", "Image Files (*.png *.jpg *.bmp)")
-        if file_path:
-            self.selected_image_path = file_path  # Seçilen resmin yolunu değişkende sakla
-            # Seçilen resmi ilk başta göster
-            image = Image.open(self.selected_image_path)
-            q_image = QImage(image.tobytes(), image.width, image.height, QImage.Format_RGB888)  # QImage'e dönüştürüyoruz
-            pixmap = QPixmap.fromImage(q_image)  # QPixmap'a dönüştürüyoruz
-            self.label.setPixmap(pixmap)
+
+        # Resetleme düğmesini oluştur
+        self.button_reset = QPushButton('Resetle', self)
+        self.button_reset.setEnabled(False)
+        self.button_reset.clicked.connect(self.reset)
+
+        self.button_save_processed = QPushButton('İşlenmiş Resmi Kaydet', self)
+        self.button_save_processed.setEnabled(False)
+        self.button_save_processed.clicked.connect(self.saveProcessedImage)
+
         
 
-    def process_and_show_image(self):
-        if self.selected_image_path:
-            image = Image.open(self.selected_image_path)
-            image_array = np.array(image)  # PIL Image'ı numpy dizisine dönüştür
-            binary_img = binary_image(image_array)  # İşlevi kullanarak resmi işle
-            if binary_img is not None:
-                height, width = binary_img.shape[:2]
-                q_image = QImage(binary_img, width, height, QImage.Format_Grayscale8)  # QImage'e dönüştür
-                
-                # Eğer resim ekrandan büyükse, boyutunu değiştir
-                max_width = 500
-                max_height = 300
-                if width > max_width or height > max_height:
-                    q_image = q_image.scaled(max_width, max_height, aspectRatioMode=True)
-                
-                pixmap = QPixmap.fromImage(q_image)  # QPixmap'a dönüştür
-                self.label.setPixmap(pixmap)  # Etikete resmi yerleştir
+        # Orijinal resim ve etiketini bir düzende topla
+        layout_original_content = QVBoxLayout()
+        layout_original_content.addWidget(self.label_original)
 
-    
-    
-    
+        # Orijinal resim ve etiketi düzene ekle
+        layout_original = QHBoxLayout()
+        layout_original.addLayout(layout_original_content)
+
+        layout_processed = QVBoxLayout()
+        layout_processed.addWidget(self.label_processed)
+
+        layout_images = QHBoxLayout()
+        layout_images.addLayout(layout_original)
+        layout_images.addLayout(layout_processed)
+
+        layout_buttons = QHBoxLayout()
+
+
+        # Ana düzeni oluştur
+        layout = QVBoxLayout()
+        layout.addWidget(self.button_load)
+        layout.addLayout(layout_images)
+        layout.addLayout(layout_buttons)
+        layout.addWidget(self.button_reset)
+        layout.addWidget(self.button_save_processed)
+
+        self.setLayout(layout)
+        self.show()
+
+    # Resim yükleme işlevi
+    def loadImage(self):
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getOpenFileName(self, 'Resim Seç', '', 'JPEG Files (*.jpg;*.jpeg);;PNG Files (*.png)')
+        if file_path:
+            image = cv2.imread(file_path)
+            if image is not None:
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                self.original_image = image.copy()
+                self.processed_image = image.copy()
+                self.showOriginalImage()
+                self.showProcessedImage()
+                self.enableButtons()
+
+    def showOriginalImage(self):
+        label_width = self.label_original.width()
+        label_height = self.label_original.height()
+        height, width, channel = self.original_image.shape
+        bytes_per_line = 3 * width
+
+        # Orijinal resmi boyutlandır
+        pixmap = QPixmap.fromImage(QImage(self.original_image.data, width, height, bytes_per_line, QImage.Format_RGB888))
+        pixmap = pixmap.scaled(label_width, label_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+        # Saydam bir pixmap oluştur ve içine resmi yerleştir
+        transparent_pixmap = QPixmap(label_width, label_height)
+        transparent_pixmap.fill(Qt.transparent)
+        painter = QPainter(transparent_pixmap)
+        target_rect = QRectF(0.0, 0.0, label_width, label_height)
+        source_rect = QRectF(0.0, 0.0, pixmap.width(), pixmap.height())
+        painter.drawPixmap(target_rect, pixmap, source_rect)
+        painter.end()
+
+        # Orijinal resmi göster
+        self.label_original.setPixmap(transparent_pixmap)
+
+    # İşlenmiş resmi gösterme işlevi
+    def showProcessedImage(self):
+        if self.processed_image is not None:
+            if len(self.processed_image.shape) == 3:  # Renkli resim
+                gray = cv2.cvtColor(self.processed_image, cv2.COLOR_BGR2GRAY)
+            elif len(self.processed_image.shape) == 2:  # Siyah beyaz resim
+                gray = self.processed_image
+            else:
+                print("Geçersiz resim formati.")
+                return
+
+            binary_img = binary_image(gray)  # Resmi binary hale getir
+            self.processed_image=binary_img
+            height, width = binary_img.shape[:2]
+            bytes_per_line = width
+            q_image = QImage(binary_img.data, width, height, bytes_per_line, QImage.Format_Grayscale8)
+            pixmap = QPixmap.fromImage(q_image)
+
+            # Resize the processed pixmap to match the size of the original image
+            label_width = self.label_original.width()
+            label_height = self.label_original.height()
+            pixmap = pixmap.scaled(label_width, label_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+            self.label_processed.setPixmap(pixmap)
+        else:
+            print("İşlenmiş resim bulunamadi.") 
+
+    # Resetleme işlevi
+    def reset(self):
+        self.processed_image = None
+        self.label_processed.clear()
+
+    # Düğmeleri etkinleştirme işlevi
+    def enableButtons(self):
+        self.button_reset.setEnabled(True)
+        self.button_save_processed.setEnabled(True)
+
+    def disableButtons(self):
+        self.button_reset.setEnabled(False)
+        self.button_save_processed.setEnabled(False)
+
+
+    # İşlenmiş resmi kaydetme işlevi
+    def saveProcessedImage(self):
+        if self.processed_image is not None and self.button_save_processed.isEnabled():
+            file_dialog = QFileDialog()
+            file_path, _ = file_dialog.getSaveFileName(self, 'İşlenmiş Resmi Kaydet', '', 'JPEG Files (*.jpg;*.jpeg);;PNG Files (*.png)')
+            if file_path:
+                # Dosya uzantısını kontrol et
+                if not file_path.endswith(('.jpg', '.jpeg', '.png')):
+                    file_path += '.jpg'  # Varsayılan olarak JPEG uzantısı ekleyin
+                cv2.imwrite(file_path, cv2.cvtColor(self.processed_image, cv2.COLOR_RGB2BGR))
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ImageProcessor()
