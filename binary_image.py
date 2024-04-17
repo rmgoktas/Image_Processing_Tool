@@ -1,11 +1,10 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout, QFileDialog
-from PyQt5.QtGui import QPixmap, QImage
 import numpy as np
-import cv2
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFileDialog
+from PyQt5.QtGui import QPixmap, QImage
+from PIL import Image
 
-def binaryimage(img):
+def binary_image(img):
     if img is None:
         print("Resim yüklenemedi.")
         return None
@@ -21,56 +20,78 @@ def binaryimage(img):
                     binaryimg[y, x] = 255
         return binaryimg
 
-def bgr_to_qpixmap(bgr_image):
-    qimage = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
-    height, width, channel = qimage.shape
-    bytesPerLine = 3 * width
-    qImg = QImage(qimage.data, width, height, bytesPerLine, QImage.Format_RGB888)
-    return QPixmap.fromImage(qImg)
-
-class ImageProcessingApp(QWidget):
+class ImageProcessor(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('Binary Image')
-        self.setGeometry(150, 150, 1200, 800)
-        
-        self.image_label = QLabel(self)
-        self.image_label.setGeometry(50, 100, 400, 400)
-        
-        open_image_button = QPushButton("Resim Seç", self)
-        open_image_button.setGeometry(50, 50, 400, 30)
-        open_image_button.clicked.connect(self.selectimage)
-        
-        start_button = QPushButton("İşlemi Başlat", self)
-        start_button.setGeometry(50, 525, 400, 30)
-        start_button.clicked.connect(self.showimg)
-        
-        self.image_path = ""
-        self.processed_image_label = QLabel(self)
-        self.processed_image_label.setGeometry(500, 100, 400, 400)
 
-def selectimage(self):
-    options = QFileDialog.Options()
-    file_path, _ = QFileDialog.getOpenFileName(None, "Resim Seç", "", "Resim Dosyalar (*.png *.jpg *.jpeg *.bmp *.gif)", options=options)
-    if file_path:
-        self.image_path = file_path
-        pixmap = QPixmap(file_path)
-        pixmap_scaled = pixmap.scaled(self.image_label.size(), aspectRatioMode=Qt.KeepAspectRatio)
-        self.image_label.setPixmap(pixmap_scaled)
+        self.setWindowTitle("Resim İşleyici")
+        self.setGeometry(100, 100, 1200, 800)  # Ekran boyutunu artırdık
 
-    def showimg(self):
-        if self.image_path:
-            img = cv2.imread(self.image_path)
+        self.label = QLabel(self)
+        self.label.setGeometry(50, 50, 400, 400)  # Etiket boyutunu artırdık
 
-            binaryimg = binaryimage(img)
-            if binaryimg is not None:
-                qImg = bgr_to_qpixmap(binaryimg)
-                self.processed_image_label.setPixmap(qImg)
-        else:
-            print("Lütfen bir resim seçin.")
+        self.select_button = QPushButton("Resim Seç", self)
+        self.select_button.setGeometry(50, 50, 150, 30)  # Butonun konumunu değiştirdik
+        self.select_button.clicked.connect(self.select_image)
 
-if __name__ == '__main__':
+        self.process_button = QPushButton("İşle ve Göster", self)
+        self.process_button.setGeometry(50, 500, 150, 30)  # Butonun konumunu değiştirdik
+        self.process_button.clicked.connect(self.process_and_show_image)
+
+        self.selected_image_path = None  # Seçilen resmin yolunu tutmak için bir değişken
+
+    def show_image(self):
+        if self.selected_image_path:
+            image = Image.open(self.selected_image_path)
+            image_array = np.array(image)  # PIL Image'ı numpy dizisine dönüştür
+            if image_array is not None:
+                height, width = image_array.shape[:2]
+                q_image = QImage(image_array, width, height, QImage.Format_Grayscale8)  # QImage'e dönüştür
+                
+                # Eğer resim ekrandan büyükse, boyutunu değiştir
+                max_width = 500
+                max_height = 300
+                if width > max_width or height > max_height:
+                    q_image = q_image.scaled(max_width, max_height, aspectRatioMode=True)
+                
+                pixmap = QPixmap.fromImage(q_image)  # QPixmap'a dönüştür
+                self.label.setPixmap(pixmap)  # Etikete resmi yerleştir
+    
+    
+    def select_image(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Resim Seç", "", "Image Files (*.png *.jpg *.bmp)")
+        if file_path:
+            self.selected_image_path = file_path  # Seçilen resmin yolunu değişkende sakla
+            # Seçilen resmi ilk başta göster
+            image = Image.open(self.selected_image_path)
+            q_image = QImage(image.tobytes(), image.width, image.height, QImage.Format_RGB888)  # QImage'e dönüştürüyoruz
+            pixmap = QPixmap.fromImage(q_image)  # QPixmap'a dönüştürüyoruz
+            self.label.setPixmap(pixmap)
+        
+
+    def process_and_show_image(self):
+        if self.selected_image_path:
+            image = Image.open(self.selected_image_path)
+            image_array = np.array(image)  # PIL Image'ı numpy dizisine dönüştür
+            binary_img = binary_image(image_array)  # İşlevi kullanarak resmi işle
+            if binary_img is not None:
+                height, width = binary_img.shape[:2]
+                q_image = QImage(binary_img, width, height, QImage.Format_Grayscale8)  # QImage'e dönüştür
+                
+                # Eğer resim ekrandan büyükse, boyutunu değiştir
+                max_width = 500
+                max_height = 300
+                if width > max_width or height > max_height:
+                    q_image = q_image.scaled(max_width, max_height, aspectRatioMode=True)
+                
+                pixmap = QPixmap.fromImage(q_image)  # QPixmap'a dönüştür
+                self.label.setPixmap(pixmap)  # Etikete resmi yerleştir
+
+    
+    
+    
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-    ex = ImageProcessingApp()
-    ex.show()
+    window = ImageProcessor()
+    window.show()
     sys.exit(app.exec_())
