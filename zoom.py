@@ -8,56 +8,51 @@ import cv2
 def resize_image(img, scale, center=None):
     
     if scale<1:
-        # Eski boyutları al
+        # Orjinal resmin boyutları
         height, width = img.shape[:2]
-        # Yeni boyutu al
-        new_width = int(width * scale)
-        new_height = int(height * scale)
         
-        # Yeni boş bir görüntü oluştur
-        resized_img = np.zeros((new_height, new_width, 3), dtype=np.uint8)
-        
-        # Boyut oranlarını hesapla
-        width_ratio = width / new_width
-        height_ratio = height / new_height
+        # Yeni boyutları hesapla
+        new_width = int(width * scale )
+        new_height = int(height * scale )
         
         # Yeniden boyutlandırma işlemi
-        for y in range(new_height):
-            for x in range(new_width):
-                resized_x = int(x * width_ratio)
-                resized_y = int(y * height_ratio)
-                # Eğer orijinal koordinatlar resmin içindeyse, yeniden boyutlandırılmış resme atama yap
-                if resized_x < width and resized_y < height:
-                    resized_img[y, x] = img[resized_y, resized_x]
-                else:
-                    # Dışarı taşan pikselleri siyahlaştır
-                    resized_img[y, x] = [0, 0, 0]
+        resized_image = cv2.resize(img, (new_width, new_height))
         
-        return resized_img
+        # Siyah bir arka plan oluştur
+        black_background = np.zeros((height, width, 3), np.uint8)
+        
+        # Yeniden boyutlandırılmış resmi siyah arka planın merkezine yerleştir
+        x_offset = (width - new_width) // 2
+        y_offset = (height - new_height) // 2
+        black_background[y_offset:y_offset+new_height, x_offset:x_offset+new_width] = resized_image
+        
+        return black_background
     else:
-        # Eski boyutları al
+            # Orjinal resmin boyutları
         height, width = img.shape[:2]
-        # Yeni boyutu al
+        
+        # Yeni boyutları hesapla
         new_width = int(width * scale)
         new_height = int(height * scale)
         
-        # Yeni boş bir görüntü oluştur
-        zoomed_img = np.zeros((new_height, new_width, 3), dtype=np.uint8)
+        # Yeniden boyutlandırma işlemi
+        resized_image = cv2.resize(img, (new_width, new_height))
         
-        # Boyut oranlarını hesapla
-        width_ratio = width / new_width
-        height_ratio = height / new_height
+        # Orta noktayı al
+        center_x = new_width // 2
+        center_y = new_height // 2
         
-        # Yakınlaştırma işlemi
-        for y in range(new_height):
-            for x in range(new_width):
-                original_x = int(x * width_ratio)
-                original_y = int(y * height_ratio)
-                # Eğer orijinal koordinatlar resmin içindeyse, yakınlaştırılmış resme atama yap
-                if original_x < width and original_y < height:
-                    zoomed_img[y, x] = img[original_y, original_x]
+        # Yakınlaştırılmış resmi kesmek için sınırları hesapla
+        start_x = max(center_x - width // 2, 0)
+        end_x = min(center_x + width // 2, new_width)
+        start_y = max(center_y - height // 2, 0)
+        end_y = min(center_y + height // 2, new_height)
         
-        return zoomed_img
+        # Yakınlaştırılmış resmi al
+        zoomed_image = resized_image[start_y:end_y, start_x:end_x]
+        
+        return zoomed_image
+         
     
     
     
@@ -82,9 +77,11 @@ class ImageProcessor(QWidget):
         self.label_original = QLabel(self)
         self.label_original.setText("Orijinal Resim")
         self.label_original.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        
         self.label_processed = QLabel(self)
         self.label_processed.setText("İşlenmiş Resim")
         self.label_processed.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
 
         # Resim yükleme düğmesi oluştur
         self.button_load = QPushButton('Resim Yükle', self)
@@ -167,35 +164,27 @@ class ImageProcessor(QWidget):
     def showProcessedImage(self):
         if self.processed_image is not None:
             scale_factor = self.slider.value() / 100.0
-            
-            # Orta noktayı al
-            center_x = self.original_image.shape[1] / 2
-            center_y = self.original_image.shape[0] / 2
-            
+
             # Ölçek faktörünü hesapla
             scale = scale_factor
             resize_img = resize_image(self.original_image, scale)
             self.processed_image = resize_img
-            
-            height, width, channel = resize_img.shape
-            bytes_per_line = 3 * width
-            q_image = QImage(resize_img.data, width, height, bytes_per_line, QImage.Format_RGB888)
-            pixmap = QPixmap.fromImage(q_image)
 
-            # QLabel'da resmi merkezlemek için gerekli boşlukları hesapla
+            # NumPy dizisini uygun bir veri türüne dönüştür
+            resize_img = resize_img.astype(np.uint8)
+
+            # QImage oluştur
+            q_image = QImage(resize_img.data, resize_img.shape[1], resize_img.shape[0], QImage.Format_RGB888)
+
+            # QLabel'da resmi göster
             label_width = self.label_original.width()
             label_height = self.label_original.height()
-            x_offset = (label_width - width) / 2
-            y_offset = (label_height - height) / 2
-
-            # QLabel'a pixmap'i yerleştir
-            painter = QPainter(pixmap)
-            painter.drawPixmap(int(x_offset), int(y_offset), pixmap)
-            painter.end()
-
+            pixmap = QPixmap.fromImage(q_image)
+            pixmap = pixmap.scaled(label_width, label_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.label_processed.setPixmap(pixmap)
         else:
             print("İşlenmiş resim bulunamadi.")
+
  
 
     # Resetleme işlevi
