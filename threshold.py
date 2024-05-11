@@ -5,34 +5,69 @@ from PyQt5.QtGui import QPixmap, QImage, QPainter
 from PyQt5.QtCore import Qt, QRectF
 import cv2
 
-def box_blurring(image, value):
-    # Resmin boyutlarını al
-    height, width = image.shape[0:2]
-    kernelsize=3
-    kernel = create_kernel(3,value)
+def threshold(img,maxvalue,adaptivetype,blocksize):
+    
+    height,width=img.shape[:2]
+    
+    blocks = []
+    if(adaptivetype==1):
+        new_img=np.zeros((height,width),dtype=np.uint8)
+        for y in range(0,height,blocksize):
+            for x in range(0,width,blocksize):
+                block = img[y:y+blocksize, x:x+blocksize]
+                blocks.append(block) 
+        
+        for y in range(0,height,blocksize):
+            for x in range(0,width,blocksize):
+                block = img[y:y+blocksize, x:x+blocksize]
+                mean_value=mean(block)
+                
+                for k in range(block.shape[0]):
+                    for l in range(block.shape[1]):
+                        if(block[k,l]<mean_value/2):
+                            block[k,l]=0
+                        else:
+                            block[k,l]=maxvalue
+                new_img[y:y+blocksize, x:x+blocksize] = block
+        return new_img      
+    if(adaptivetype==2):
+        new_img=np.zeros((height,width),dtype=np.uint8)
+        for y in range(0,height,blocksize):
+            for x in range(0,width,blocksize):
+                block = img[y:y+blocksize, x:x+blocksize]
+                blocks.append(block) 
+        
+        for y in range(0,height,blocksize):
+            for x in range(0,height,blocksize):
+                block = img[y:y+blocksize, x:x+blocksize]
+                mean_value=mean(block)
+                
+                for k in range(block.shape[0]):
+                    for l in range(block.shape[1]):
+                        if(block[k,l]<mean_value/2):
+                            block[k,l]=maxvalue
+                        else:
+                            block[k,l]=0
+                new_img[y:y+blocksize, x:x+blocksize] = block
+        return new_img
+           
+def mean(block):
+    if len(block.shape) == 2:  # Blok 2 boyutlu bir dizi mi?
+        height, width = block.shape
+        total_value = 0
+        
+        for y in range(height):
+            for x in range(width):
+                total_value += block[y, x]
+        
+        mean_value = total_value / (height * width)
+        
+        return mean_value
+    else:
+        raise ValueError("Block, beklenen 2 boyutlu bir dizi değil.")
 
-    # Yeni resim
-    blurred_image = np.zeros_like(image, dtype=np.float32)
-
-    for y in range(kernelsize // 2, height - kernelsize // 2):
-        for x in range(kernelsize // 2, width - kernelsize // 2):
-            neighborhood = image[y - kernelsize // 2 : y + kernelsize // 2 + 1,
-                                 x - kernelsize // 2 : x + kernelsize // 2 + 1]
-            # Axis(0,1) önce ilk satır için daha sonra diğer satırlar için sırayla işlemi gerçekleştirir
-            blurred_pixel = np.sum(neighborhood * kernel, axis=(0, 1))
-            blurred_image[y, x] = blurred_pixel
-
-    # Blurlanmış resmi uint8 formata dönüştürüyoruzz
-    blurred_image = np.clip(blurred_image, 0, 255).astype(np.uint8)
-    return blurred_image
-
-# Değişken boyutlu kernel oluşturmak için kullanıyoruz 
-def create_kernel(size,value):
-    kernel_value =  100 / value
-    kernel = np.full((size, size), kernel_value)
-    return kernel
-
-
+    
+    
 
 class ImageProcessor(QWidget):
     def __init__(self):
@@ -51,22 +86,15 @@ class ImageProcessor(QWidget):
         self.label_original = QLabel(self)
         self.label_original.setText("Orijinal Resim")
         self.label_original.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        
         self.label_processed = QLabel(self)
         self.label_processed.setText("İşlenmiş Resim")
         self.label_processed.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
 
         # Resim yükleme düğmesi oluştur
         self.button_load = QPushButton('Resim Yükle', self)
         self.button_load.clicked.connect(self.loadImage)
 
-        self.slider = QSlider(Qt.Horizontal, self)
-        self.slider.setGeometry(50, 50, 1180, 20)
-        self.slider.setRange(1, 500)  # Minimum ve maksimum değer aralığını belirle
-        self.slider.setValue(100)  # Başlangıç değerini belirle
-        self.slider.setSingleStep(1)  # Tek adımda kaydırma miktarını belirle
-        self.slider.valueChanged.connect(self.on_slider_changed)  # Slider değeri değiştiğinde işlevi bağla
+
 
         # Resetleme düğmesini oluştur
         self.button_reset = QPushButton('Resetle', self)
@@ -76,6 +104,8 @@ class ImageProcessor(QWidget):
         self.button_save_processed = QPushButton('İşlenmiş Resmi Kaydet', self)
         self.button_save_processed.setEnabled(False)
         self.button_save_processed.clicked.connect(self.saveProcessedImage)
+
+        
 
         # Orijinal resim ve etiketini bir düzende topla
         layout_original_content = QVBoxLayout()
@@ -94,10 +124,10 @@ class ImageProcessor(QWidget):
 
         layout_buttons = QHBoxLayout()
 
+
         # Ana düzeni oluştur
         layout = QVBoxLayout()
         layout.addWidget(self.button_load)
-        layout.addWidget(self.slider)
         layout.addLayout(layout_images)
         layout.addLayout(layout_buttons)
         layout.addWidget(self.button_reset)
@@ -126,40 +156,41 @@ class ImageProcessor(QWidget):
         height, width, channel = self.original_image.shape
         bytes_per_line = 3 * width
 
-        # Orijinal resmi uygun boyuta ölçeklendir
+        # Orijinal resmi boyutlandır
         pixmap = QPixmap.fromImage(QImage(self.original_image.data, width, height, bytes_per_line, QImage.Format_RGB888))
         pixmap = pixmap.scaled(label_width, label_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
-        # Orijinal resmi göster
-        self.label_original.setPixmap(pixmap)
+        # Saydam bir pixmap oluştur ve içine resmi yerleştir
+        transparent_pixmap = QPixmap(label_width, label_height)
+        transparent_pixmap.fill(Qt.transparent)
+        painter = QPainter(transparent_pixmap)
+        target_rect = QRectF(0.0, 0.0, label_width, label_height)
+        source_rect = QRectF(0.0, 0.0, pixmap.width(), pixmap.height())
+        painter.drawPixmap(target_rect, pixmap, source_rect)
+        painter.end()
 
+        # Orijinal resmi göster
+        self.label_original.setPixmap(transparent_pixmap)
 
     # İşlenmiş resmi gösterme işlevi
     def showProcessedImage(self):
         if self.processed_image is not None:
-            scale_factor = self.slider.value() / 100.0
+            img=cv2.cvtColor(self.original_image,cv2.COLOR_BGR2GRAY)
+            binary_img = threshold(img, maxvalue=255, adaptivetype=1, blocksize=10)  # Resmi binary hale getir
+            self.processed_image=binary_img
+            height, width = binary_img.shape
+            bytes_per_line = width
+            q_image = QImage(binary_img.data, width, height, bytes_per_line, QImage.Format_Grayscale8)
+            pixmap = QPixmap.fromImage(q_image)
 
-            # Ölçek faktörünü hesapla
-            scale = scale_factor
-            resize_img = box_blurring(self.original_image, scale)
-            self.processed_image = resize_img
-
-            # NumPy dizisini uygun bir veri türüne dönüştür
-            resize_img = resize_img.astype(np.uint8)
-
-            # QImage oluştur
-            q_image = QImage(resize_img.data, resize_img.shape[1], resize_img.shape[0], QImage.Format_RGB888)
-
-            # QLabel'da resmi göster
+            # Resize the processed pixmap to match the size of the original image
             label_width = self.label_original.width()
             label_height = self.label_original.height()
-            pixmap = QPixmap.fromImage(q_image)
             pixmap = pixmap.scaled(label_width, label_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
             self.label_processed.setPixmap(pixmap)
         else:
-            print("İşlenmiş resim bulunamadi.")
-
- 
+            print("İşlenmiş resim bulunamadi.") 
 
     # Resetleme işlevi
     def reset(self):
@@ -175,6 +206,7 @@ class ImageProcessor(QWidget):
         self.button_reset.setEnabled(False)
         self.button_save_processed.setEnabled(False)
 
+
     # İşlenmiş resmi kaydetme işlevi
     def saveProcessedImage(self):
         if self.processed_image is not None and self.button_save_processed.isEnabled():
@@ -186,13 +218,15 @@ class ImageProcessor(QWidget):
                     file_path += '.jpg'  # Varsayılan olarak JPEG uzantısı ekleyin
                 cv2.imwrite(file_path, cv2.cvtColor(self.processed_image, cv2.COLOR_RGB2BGR))
 
-    # Slider değeri değiştiğinde çağrılan işlev
-    def on_slider_changed(self):
-        self.showProcessedImage()
-
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ImageProcessor()
     window.show()
     sys.exit(app.exec_())
+
+
+
+
+
+
 
