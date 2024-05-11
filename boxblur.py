@@ -5,27 +5,30 @@ from PyQt5.QtGui import QPixmap, QImage, QPainter
 from PyQt5.QtCore import Qt, QRectF
 import cv2
 
-def box_blurring(self, image, value):
+def box_blurring(image, value):
+    # Resmin boyutlarını al
     height, width = image.shape[0:2]
-    kernelsize = 3
-    kernel = create_kernel(3, value)  # Slider değerini kullanarak kerneli oluştur
+    kernelsize=3
+    kernel = create_kernel(3,value)
 
+    # Yeni resim
     blurred_image = np.zeros_like(image, dtype=np.float32)
 
     for y in range(kernelsize // 2, height - kernelsize // 2):
         for x in range(kernelsize // 2, width - kernelsize // 2):
-            neighborhood = image[y - kernelsize // 2: y + kernelsize // 2 + 1,
-                                 x - kernelsize // 2: x + kernelsize // 2 + 1]
+            neighborhood = image[y - kernelsize // 2 : y + kernelsize // 2 + 1,
+                                 x - kernelsize // 2 : x + kernelsize // 2 + 1]
+            # Axis(0,1) önce ilk satır için daha sonra diğer satırlar için sırayla işlemi gerçekleştirir
             blurred_pixel = np.sum(neighborhood * kernel, axis=(0, 1))
             blurred_image[y, x] = blurred_pixel
 
+    # Blurlanmış resmi uint8 formata dönüştürüyoruzz
     blurred_image = np.clip(blurred_image, 0, 255).astype(np.uint8)
     return blurred_image
 
-
 # Değişken boyutlu kernel oluşturmak için kullanıyoruz 
 def create_kernel(size,value):
-    kernel_value =  value / 100
+    kernel_value =   (value / 100) 
     kernel = np.full((size, size), kernel_value)
     return kernel
 
@@ -60,16 +63,11 @@ class ImageProcessor(QWidget):
 
         self.slider = QSlider(Qt.Horizontal, self)
         self.slider.setGeometry(50, 50, 1180, 20)
-        self.slider.setRange(1, 500)  # Minimum ve maksimum değer aralığını belirle
-        self.slider.setValue(100)  # Başlangıç değerini belirle
+        self.slider.setRange(10, 30)  # Minimum ve maksimum değer aralığını belirle
+        self.slider.setValue(10)  # Başlangıç değerini belirle
         self.slider.setSingleStep(1)  # Tek adımda kaydırma miktarını belirle
         self.slider.valueChanged.connect(self.on_slider_changed)  # Slider değeri değiştiğinde işlevi bağla
 
-        def on_slider_changed(self):
-            value = self.slider.value()  # Slider değerini al
-            self.showProcessedImage(value)  # Yeniden işlem yapmak için bu değeri gönder
-
-        
         # Resetleme düğmesini oluştur
         self.button_reset = QPushButton('Resetle', self)
         self.button_reset.setEnabled(False)
@@ -137,14 +135,29 @@ class ImageProcessor(QWidget):
 
 
     # İşlenmiş resmi gösterme işlevi
-    def showProcessedImage(self, value):
+    def showProcessedImage(self):
         if self.processed_image is not None:
-            scale_factor = value  # Slider değerini al
-            resize_img = self.box_blurring(self.original_image, scale_factor)  # Slider değerini kullanarak işleme yap
+            scale_factor = self.slider.value() 
+
+            # Ölçek faktörünü hesapla
+            scale = scale_factor
+            resize_img = box_blurring(self.original_image, scale)
             self.processed_image = resize_img
 
-            # Diğer kodlar devam ediyor...
+            # NumPy dizisini uygun bir veri türüne dönüştür
+            resize_img = resize_img.astype(np.uint8)
 
+            # QImage oluştur
+            q_image = QImage(resize_img.data, resize_img.shape[1], resize_img.shape[0], QImage.Format_RGB888)
+
+            # QLabel'da resmi göster
+            label_width = self.label_original.width()
+            label_height = self.label_original.height()
+            pixmap = QPixmap.fromImage(q_image)
+            pixmap = pixmap.scaled(label_width, label_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.label_processed.setPixmap(pixmap)
+        else:
+            print("İşlenmiş resim bulunamadi.")
 
  
 
@@ -182,4 +195,3 @@ if __name__ == "__main__":
     window = ImageProcessor()
     window.show()
     sys.exit(app.exec_())
-
