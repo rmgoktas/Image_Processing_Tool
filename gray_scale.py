@@ -5,7 +5,6 @@ def bgr_to_gray(img):
     
     gray_img=np.zeros((height,width),dtype=np.uint8)
     
-    
     for y in range(height):
         for x in range(width):
             blue=img[y,x,0]
