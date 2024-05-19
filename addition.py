@@ -11,29 +11,29 @@ def addition(img1, img2):
     p1h, p1w = img1.shape[:2]  # Yükseklik ve genişlik
     p2h, p2w = img2.shape[:2]  # Yükseklik ve genişlik
     
-    # Renkli resimler için işlem bloğu
+    # Renkli resimler için 
     if len(img1.shape) == 3 and len(img2.shape) == 3:
         if p1w == p2w and p1h == p2h:
-            # İki resim de aynı boyutta olduğunda toplama işlemi yapılır
-            result_image = np.zeros_like(img1)  # img1 ile aynı boyutta bir dizi oluşturur
+            # İki resim de aynı boyutta olduğunda zaman
+            result_image = np.zeros_like(img1)  # img1 ile aynı boyutta bir dizi 
             
             for y in range(p1h):
                 for x in range(p1w):
                     pixel1 = img1[y, x]  # img1'den piksel değerleri
                     pixel2 = img2[y, x]  # img2'den piksel değerleri
-                    result_pixel = np.clip(pixel1 + pixel2, 0, 255)  # Piksel değerlerini 0 ile 255 arasında kırp
-                    result_image[y, x] = result_pixel  # Sonuç dizisine pikseli ekle
+                    result_pixel = np.clip(pixel1 + pixel2, 0, 255)  # Piksel değerlerini 0 ile 255 arası
+                    result_image[y, x] = result_pixel  # yeni diziye pikseli ekle
                     
             return result_image
         else:
-            print("Renkli resimler aynı boyutta değil.")
+            print("Renkli resimler ayni boyutta değil.")
             return None
     
-    # Gri resimler için işlem bloğu
+    # Gri resimler için 
     elif len(img1.shape) == 2 and len(img2.shape) == 2:
         if p1w == p2w and p1h == p2h:
             # İki resim de aynı boyutta olduğunda toplama işlemi yapılır
-            result_image = np.zeros_like(img1)  # img1 ile aynı boyutta bir dizi oluşturur
+            result_image = np.zeros_like(img1)  # img1 ile aynı boyutta bir dizi oluştu
             
             for y in range(p1h):
                 for x in range(p1w):
@@ -44,10 +44,10 @@ def addition(img1, img2):
                     
             return result_image
         else:
-            print("Gri resimler aynı boyutta değil.")
+            print("Gri resimler ayni boyutta değil.")
             return None
     else:
-        print("Beklenmeyen resim formatı.")
+        print("Beklenmeyen resim formati.")
         return None
 
 

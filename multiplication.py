@@ -9,23 +9,10 @@ import cv2
 def multiplication(img1,img2):
     img1height,img1width,img1ch=img1.shape
     img2height,img2width,img2ch=img2.shape
-    
+    #resimlerin boyutları ve kanal özelliği aynı ise
     if((img1height==img2height)&(img1width==img2width)&(img1ch==img2ch)):
-        
-        if(img1ch==1):
-            newimg=np.zeros((img1height,img1width),dtype=np.uint8)
-            
-            for y in range(img1height):
-                for x in range(img1width):
-                    img1_pixel_value=img1[y,x]
-                    img2_pixel_value=img2[y,x]
-                    new_value=img1_pixel_value*img2_pixel_value
-                    if(new_value>255):
-                        newimg[y,x]=255
-                    else:
-                        newimg[y,x]=new_value
-            return newimg
-        else:
+        #resimler renkli ise
+        if(img1ch==3):
             newimg=np.zeros((img1height,img1width,3),dtype=np.uint8)
             
             for y in range(img1height):
@@ -52,6 +39,21 @@ def multiplication(img1,img2):
                     else:
                         newimg[y,x,2]=red_value
             return newimg
+        # renkli değil ise
+        else:
+            newimg=np.zeros((img1height,img1width),dtype=np.uint8)
+            
+            for y in range(img1height):
+                for x in range(img1width):
+                    img1_pixel_value=img1[y,x]
+                    img2_pixel_value=img2[y,x]
+                    new_value=img1_pixel_value*img2_pixel_value
+                    if(new_value>255):
+                        newimg[y,x]=255
+                    else:
+                        newimg[y,x]=new_value
+            return newimg
+           
     else:
         print("Resimler ayni boyutta veya formatta degil")
 

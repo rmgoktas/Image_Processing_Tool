@@ -11,7 +11,7 @@ def binary_image(img):
         return None
     else:
         height, width = img.shape[:2]
-        binaryimg = np.zeros((height, width), dtype=np.uint8)
+        binaryimg = np.zeros((height, width), dtype=np.uint8)#resimel aynı boyutta dizi
         for y in range(height):
             for x in range(width):
                 pixel = img[y, x]
@@ -129,7 +129,7 @@ class ImageProcessor(QWidget):
     def showProcessedImage(self):
         if self.processed_image is not None:
             if len(self.processed_image.shape) == 3:  # Renkli resim
-                gray = cv2.cvtColor(self.processed_image, cv2.COLOR_BGR2GRAY)
+                print("Lutfen gri resim seciniz")
             elif len(self.processed_image.shape) == 2:  # Siyah beyaz resim
                 gray = self.processed_image
             else:
