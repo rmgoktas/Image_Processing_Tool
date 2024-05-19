@@ -3,6 +3,7 @@ import cv2
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton, QFileDialog
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
+import numpy as np
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -51,7 +52,15 @@ class MainWindow(QMainWindow):
 
     def convert_to_gray(self):
         if self.original_image is not None:
-            gray_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
+            # Convert to gray manually
+            gray_image = np.zeros((self.original_image.shape[0], self.original_image.shape[1]), dtype=np.uint8)
+            for i in range(self.original_image.shape[0]):
+                for j in range(self.original_image.shape[1]):
+                    r, g, b = self.original_image[i, j]
+                    gray = int(0.299 * r + 0.587 * g + 0.114 * b)
+                    gray_image[i, j] = gray
+
+            # Convert the grayscale image back to BGR format for display
             self.displayed_image = cv2.cvtColor(gray_image, cv2.COLOR_GRAY2BGR)
             self.display_image()
             self.original_image = self.displayed_image
