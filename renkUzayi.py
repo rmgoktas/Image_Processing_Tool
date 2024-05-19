@@ -2,7 +2,7 @@ from email.mime import application
 import cv2
 import sys
 import numpy as np
-from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFileDialog, QSizePolicy
+from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFileDialog, QSizePolicy,QApplication
 from PyQt5.QtGui import QPixmap, QImage, QPainter
 from PyQt5.QtCore import Qt, QRectF
 
@@ -164,6 +164,7 @@ class RenkUzayiDonusumleriScript(QWidget):
                 cv2.imwrite(file_path, cv2.cvtColor(self.processed_image, cv2.COLOR_RGB2BGR))
 
 if __name__ == '__main__':
-    app = application(sys.argv)
-    ex = RenkUzayiDonusumleriScript()
+    app = QApplication(sys.argv)
+    window = RenkUzayiDonusumleriScript()
+    window.show()
     sys.exit(app.exec_())

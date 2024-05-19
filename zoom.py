@@ -7,51 +7,98 @@ import cv2
 
 def resize_image(img, scale, center=None):
     
-    if scale<1:
-        # Orjinal resmin boyutları
-        height, width = img.shape[:2]
-        
-        # Yeni boyutları hesapla
-        new_width = int(width * scale )
-        new_height = int(height * scale )
-        
-        # Yeniden boyutlandırma işlemi
-        resized_image = cv2.resize(img, (new_width, new_height))
-        
-        # Siyah bir arka plan oluştur
-        black_background = np.zeros((height, width, 3), np.uint8)
-        
-        # Yeniden boyutlandırılmış resmi siyah arka planın merkezine yerleştir
-        x_offset = (width - new_width) // 2
-        y_offset = (height - new_height) // 2
-        black_background[y_offset:y_offset+new_height, x_offset:x_offset+new_width] = resized_image
-        
-        return black_background
-    else:
+    imglen=len(img.shape)
+    
+    if imglen==3:
+        if scale<1:
             # Orjinal resmin boyutları
-        height, width = img.shape[:2]
+            height, width = img.shape[:2]
+            
+            # Yeni boyutları hesapla
+            new_width = int(width * scale )
+            new_height = int(height * scale )
+            
+            # Yeniden boyutlandırma işlemi
+            resized_image = cv2.resize(img, (new_width, new_height))
+            
+            # Siyah bir arka plan oluştur
+            black_background = np.zeros((height, width, 3), np.uint8)
+            
+            # Yeniden boyutlandırılmış resmi siyah arka planın merkezine yerleştir
+            x_offset = (width - new_width) // 2
+            y_offset = (height - new_height) // 2
+            black_background[y_offset:y_offset+new_height, x_offset:x_offset+new_width] = resized_image
+            
+            return black_background
+        else:
+            # Orjinal resmin boyutları
+            height, width = img.shape[:2]
+            
+            # Yeni boyutları hesapla
+            new_width = int(width * scale)
+            new_height = int(height * scale)
+            
+            # Yeniden boyutlandırma işlemi
+            resized_image = cv2.resize(img, (new_width, new_height))
+            
+            # Orta noktayı al
+            center_x = new_width // 2
+            center_y = new_height // 2
+            
+            # Yakınlaştırılmış resmi kesmek için sınırları hesapla
+            start_x = max(center_x - width // 2, 0)
+            end_x = min(center_x + width // 2, new_width)
+            start_y = max(center_y - height // 2, 0)
+            end_y = min(center_y + height // 2, new_height)
+            
+            # Yakınlaştırılmış resmi al
+            zoomed_image = resized_image[start_y:end_y, start_x:end_x]
+            
+            return zoomed_image
+    elif imglen==2:
+        if scale <= 1:
+            # Yeni boyutları hesapla
+            new_width = int(width * scale)
+            new_height = int(height * scale)
+            
+            # Yeniden boyutlandırma işlemi
+            resized_image = cv2.resize(img, (new_width, new_height))
+            
+            # Siyah bir arka plan oluştur
+            black_background = np.zeros_like(img)
+            
+            # Yeniden boyutlandırılmış resmi siyah arka planın merkezine yerleştir
+            x_offset = (width - new_width) // 2
+            y_offset = (height - new_height) // 2
+            black_background[y_offset:y_offset + new_height, x_offset:x_offset + new_width] = resized_image
+            
+            return black_background
+        else:
+            # Yeni boyutları hesapla
+            new_width = int(width * scale)
+            new_height = int(height * scale)
+            
+            # Yeniden boyutlandırma işlemi
+            resized_image = cv2.resize(img, (new_width, new_height))
+            
+            # Orta noktayı al
+            center_x = new_width // 2
+            center_y = new_height // 2
+            
+            # Yeni boyutları hesapla
+            start_x = max(center_x - width // 2, 0)
+            end_x = min(center_x + width // 2, new_width)
+            start_y = max(center_y - height // 2, 0)
+            end_y = min(center_y + height // 2, new_height)
+            
+            # Yakınlaştırılmış resmi al
+            zoomed_image = resized_image[start_y:end_y, start_x:end_x]
+            
+            return zoomed_image
         
-        # Yeni boyutları hesapla
-        new_width = int(width * scale)
-        new_height = int(height * scale)
-        
-        # Yeniden boyutlandırma işlemi
-        resized_image = cv2.resize(img, (new_width, new_height))
-        
-        # Orta noktayı al
-        center_x = new_width // 2
-        center_y = new_height // 2
-        
-        # Yakınlaştırılmış resmi kesmek için sınırları hesapla
-        start_x = max(center_x - width // 2, 0)
-        end_x = min(center_x + width // 2, new_width)
-        start_y = max(center_y - height // 2, 0)
-        end_y = min(center_y + height // 2, new_height)
-        
-        # Yakınlaştırılmış resmi al
-        zoomed_image = resized_image[start_y:end_y, start_x:end_x]
-        
-        return zoomed_image
+    
+    
+    
          
     
     

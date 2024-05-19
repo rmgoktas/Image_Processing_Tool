@@ -57,7 +57,7 @@ class ImageProcessor(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('Binary Dönüşüm')
+        self.setWindowTitle('Resim Toplama')
         self.setFixedSize(1280, 720)
 
         # Orijinal resim ve işlenmiş resim değişkenleri

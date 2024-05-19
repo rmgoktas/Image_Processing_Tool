@@ -50,7 +50,7 @@ def select_option(combo_box):
     elif selected_option_index == 6:
         subprocess.run(["python", "renkUzayi.py"])
     elif selected_option_index == 7:
-        subprocess.run(["python", "strecthing_expansion.py"])    
+        subprocess.run(["python", "stretching_expansion.py"])    
     elif selected_option_index == 8:
         subprocess.run(["python", "addition.py"])
     elif selected_option_index == 9:
@@ -68,6 +68,6 @@ def select_option(combo_box):
     elif selected_option_index == 15:
         subprocess.run(["python", "boxblur.py"])
     elif selected_option_index == 16:
-        subprocess.run(["python", "streching_expansion.py"])
+        subprocess.run(["python", "morfolojikIslemler.py"])
 if __name__ == '__main__':
     main()
