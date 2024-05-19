@@ -96,16 +96,6 @@ def resize_image(img, scale, center=None):
             
             return zoomed_image
         
-    
-    
-    
-         
-    
-    
-    
-
-
-
 
 class ImageProcessor(QWidget):
     def __init__(self):

@@ -40,30 +40,35 @@ class MainWindow(QMainWindow):
         if filename:
             self.image_path = filename
             self.original_image = cv2.imread(self.image_path)
-            self.display_image()
+            self.display_image(self.original_image)
 
-    def display_image(self):
-        if self.original_image is not None:
-            height, width, channel = self.original_image.shape
-            bytesPerLine = 3 * width
-            qImg = QImage(self.original_image.data, width, height, bytesPerLine, QImage.Format_RGB888)
+    def display_image(self, image):
+        if image is not None:
+            if len(image.shape) == 2:  # grayscale image
+                height, width = image.shape
+                bytesPerLine = width
+                qImg = QImage(image.data, width, height, bytesPerLine, QImage.Format_Grayscale8)
+            else:  # color image
+                height, width, channel = image.shape
+                bytesPerLine = 3 * width
+                qImg = QImage(image.data, width, height, bytesPerLine, QImage.Format_BGR888)  # Corrected here
             pixmap = QPixmap.fromImage(qImg)
             self.image_label.setPixmap(pixmap.scaled(400, 300, Qt.KeepAspectRatio))
 
     def convert_to_gray(self):
         if self.original_image is not None:
-            # Convert to gray manually
-            gray_image = np.zeros((self.original_image.shape[0], self.original_image.shape[1]), dtype=np.uint8)
-            for i in range(self.original_image.shape[0]):
-                for j in range(self.original_image.shape[1]):
-                    r, g, b = self.original_image[i, j]
-                    gray = int(0.299 * r + 0.587 * g + 0.114 * b)
-                    gray_image[i, j] = gray
+            if len(self.original_image.shape) == 2:  # Already grayscale
+                gray_image = self.original_image
+            else:  # Convert to gray manually
+                gray_image = np.zeros((self.original_image.shape[0], self.original_image.shape[1]), dtype=np.uint8)
+                for i in range(self.original_image.shape[0]):
+                    for j in range(self.original_image.shape[1]):
+                        b, g, r = self.original_image[i, j]  # Corrected here
+                        gray = int(0.299 * r + 0.587 * g + 0.114 * b)
+                        gray_image[i, j] = gray
 
-            # Convert the grayscale image back to BGR format for display
-            self.displayed_image = cv2.cvtColor(gray_image, cv2.COLOR_GRAY2BGR)
-            self.display_image()
-            self.original_image = self.displayed_image
+            self.display_image(gray_image)
+            self.original_image = gray_image
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
