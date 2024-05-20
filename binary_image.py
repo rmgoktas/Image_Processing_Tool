@@ -129,7 +129,7 @@ class ImageProcessor(QWidget):
     def showProcessedImage(self):
         if self.processed_image is not None:
             if len(self.processed_image.shape) == 3:  # Renkli resim
-                print("Lutfen gri resim seciniz")
+                gray = cv2.cvtColor(self.processed_image, cv2.COLOR_BGR2GRAY)
             elif len(self.processed_image.shape) == 2:  # Siyah beyaz resim
                 gray = self.processed_image
             else:
