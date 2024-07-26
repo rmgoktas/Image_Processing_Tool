@@ -14,7 +14,7 @@ def box_blurring(image, value):
         kernelsize=3
         kernel = create_kernel(3,value)
 
-        # Yeni resim
+        # Yeni resim hassas olsun diye float32
         blurred_image = np.zeros_like(image, dtype=np.float32)
 
         for y in range(kernelsize // 2, height - kernelsize // 2):
@@ -28,6 +28,7 @@ def box_blurring(image, value):
         # Blurlanmış resmi uint8 formata dönüştürüyoruzz
         blurred_image = np.clip(blurred_image, 0, 255).astype(np.uint8)
         return blurred_image
+    
     else:
          # Resmin boyutlarını al
         height, width = image.shape
